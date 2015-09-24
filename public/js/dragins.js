@@ -163,6 +163,9 @@ Dragins.view = function(ctrl) {
 
     function popItem(list, id) {
         var items = list.items();
+        if(items.indexOf(id) < 0) {
+            return;
+        }
         items.splice(items.indexOf(id), 1);
         list.items(items);
     }
@@ -174,11 +177,13 @@ Dragins.view = function(ctrl) {
         }
         if(dragging.listIndex() === -1 && dragging.menuIndex() >= 0) {
             popItem(ctrl.listery.list, dragging.id());
+            popItem(ctrl.listery.menu, dragging.id());
             pushItem(ctrl.listery.menu, dragging.id());
             return;
         }
         if(dragging.menuIndex() === -1 && dragging.listIndex() >= 0) {
             popItem(ctrl.listery.menu, dragging.id());
+            popItem(ctrl.listery.list, dragging.id());
             pushItem(ctrl.listery.list, dragging.id());
             return;
         }
@@ -239,12 +244,10 @@ Dragins.view = function(ctrl) {
                 setListRegion();
             },
             onmouseup : function(e) {
-                var dragging = ctrl.listery.dragging;
-
-                if(dragging.id()) {
+                if(ctrl.listery.dragging.id()) {
                     updateListAndMenu();
                 }
-                dragging.id(undefined);
+                ctrl.listery.dragging.id(undefined);
             },
             onmousemove : function(e) {
                 // don't do anything if not dragging a tab
