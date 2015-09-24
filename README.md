@@ -1,2 +1,2 @@
 # Dragins
-Drag/drop card sorter
+Drag/drop card sorter, Mirthril js, Pure CSS.

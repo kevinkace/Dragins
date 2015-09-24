@@ -1,0 +1,66 @@
+html {
+  box-sizing: border-box;
+}
+*,
+*:before,
+*:after {
+  box-sizing: inherit;
+}
+
+html,
+body,
+#mount,
+.dragins {
+    height: 100%;
+}
+
+.dragins {
+    position: relative;
+    padding: 0 0.25em;
+}
+
+h4 {
+    margin: 0 0 0.2em;
+}
+
+p {
+    margin: 0.2em 0 0;
+}
+
+.list,
+.menu {
+    padding: 0.5em 0.25em;
+    height: 100%;
+}
+
+
+
+.tabs {
+    height: 100%;
+    padding: 0;
+    margin: 0;
+    border: solid 1px #eee;
+    list-style: none;
+}
+.tab {
+    cursor: -moz-grab;
+    cursor: -webkit-grab;
+    cursor: grab;
+    padding: 0.5em;
+    background: #eee;
+}
+.tab.tab-active {
+    background: #ccc;
+}
+
+.dragging {
+    position: absolute;
+    display: none;
+}
+.dragging.dragging-active {
+    cursor: -moz-grabbing;
+    cursor: -webkit-grabbing;
+    cursor: grabbing;
+    display: block;
+    opacity: 0.4;
+}
