@@ -1,0 +1,19 @@
+{
+  "name": "dragins",
+  "version": "1.0.0",
+  "description": "Drag/drop card sorter.",
+  "main": "index.html",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kevinkace/Dragins.git"
+  },
+  "author": "Kevin Cameron",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/kevinkace/Dragins/issues"
+  },
+  "homepage": "https://github.com/kevinkace/Dragins#readme"
+}

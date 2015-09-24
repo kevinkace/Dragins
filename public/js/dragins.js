@@ -1,4 +1,4 @@
-/*global m */
+/*global console, m */
 
 "use strict";
 
@@ -26,7 +26,15 @@ Dragins.Listery = function() {
         "blue",
         "orange"
     ]);
-    this.menus = m.prop([]);
+    this.menus = {
+        list     : m.prop([]),
+        region : {
+            x1 : m.prop(),
+            y1 : m.prop(),
+            x2 : m.prop(),
+            y2 : m.prop()
+        }
+    };
 };
 
 
@@ -41,7 +49,7 @@ Dragins.view = function(ctrl) {
             {
                 onmousedown : function(e) {
                     e.preventDefault();
-                    ctrl.listery.dragging.name(e.currentTarget.innerText);
+                    ctrl.listery.dragging.name(e.currentTarget.innerText.trim());
                     // debugger;
                     ctrl.listery.dragging.size.x(e.currentTarget.clientWidth);
                     ctrl.listery.dragging.size.y(e.currentTarget.clientHeight);
@@ -68,7 +76,7 @@ Dragins.view = function(ctrl) {
 
     function menu(listery) {
         return m("ul.tabs",
-            listery.menus()
+            listery.menus.list()
                 .map(function(menu) {
                     return m("li", renderTab(menu));
                 })
@@ -77,7 +85,36 @@ Dragins.view = function(ctrl) {
 
     return m(".dragins.pure-g",
         {
+            onmousedown : function(e) {
+                var menus = document.getElementsByClassName("menu")[0];
+                ctrl.listery.menus.region.x1(menus.offsetLeft);
+                ctrl.listery.menus.region.y1(menus.offsetTop);
+                ctrl.listery.menus.region.x2(menus.offsetLeft + menus.clientWidth);
+                ctrl.listery.menus.region.y2(menus.offsetTop + menus.clientHeight);
+            },
             onmouseup : function(e) {
+                function droppedInMenu(e) {
+                    var region = ctrl.listery.menus.region;
+                    return e.clientX >= region.x1() &&
+                           e.clientX <= region.x2() &&
+                           e.clientY >= region.y1() &&
+                           e.clientY <= region.y2();
+                }
+                if(ctrl.listery.dragging.name() && droppedInMenu(e)) {
+                    // Update menu
+                    var list = ctrl.listery.menus.list().slice();
+                    list.push(ctrl.listery.dragging.name());
+                    ctrl.listery.menus.list(list);
+
+                    // Update pages
+                    var pages = ctrl.listery.pages()
+                                    .slice()
+                                    .filter(function(page) {
+                                        return page !== ctrl.listery.dragging.name();
+                                    });
+                    ctrl.listery.pages(pages);
+
+                }
                 ctrl.listery.dragging.name(undefined);
             },
             onmousemove : function(e) {
