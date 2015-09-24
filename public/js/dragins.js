@@ -40,9 +40,39 @@ var Dragins = {};
 
 Dragins.Listery = function() {
 
+    this.data = data;
+        //.map(function(data, idx) {
+        //     data.position = m.prop();
+        //     return data;
+        // });
+
+    this.list = {
+        items : m.prop(data.map(function(item) {
+                return item.id;
+            })
+        ),
+        region : {
+            x1 : m.prop(),
+            y1 : m.prop(),
+            x2 : m.prop(),
+            y2 : m.prop()
+        }
+    };
+
+    this.menu = {
+        items : m.prop([]),
+        region : {
+            x1 : m.prop(),
+            y1 : m.prop(),
+            x2 : m.prop(),
+            y2 : m.prop()
+        }
+    };
+
     this.dragging = {
-        id : m.prop(),
-        origin : m.prop(),
+        id        : m.prop(),
+        listIndex : m.prop(),
+        menuIndex : m.prop(),
         position : {
             x : m.prop(),
             y : m.prop()
@@ -57,12 +87,7 @@ Dragins.Listery = function() {
         }
     };
 
-    this.list = data.map(function(data, idx) {
-        data.position = m.prop();
-        return data;
-    });
-
-    this.menus = {
+    this.dropzone = {
         region : {
             x1 : m.prop(),
             y1 : m.prop(),
@@ -77,7 +102,7 @@ Dragins.controller = function() {
     this.listery = new Dragins.Listery();
 
     this.getItemById = function(id) {
-        return this.listery.list
+        return this.listery.data
             .filter(function(item) {
                 return item.id === id;
             })[0];
@@ -102,79 +127,141 @@ Dragins.view = function(ctrl) {
                 }
             },
             [
-                m("h4", item.id || "empty")
+                m("h4", item.name || "empty")
             ]
         );
     }
 
-    function list(listery) {
+    function renderList(list) {
         return m("ul.tabs",
-            listery.list
-                .filter(function(item) {
-                    return item.position() === undefined;
-                })
-                .map(function(item) {
-                    return m("li", renderTab(item));
+            list.items()
+                .map(function(id) {
+                    return m("li", renderTab(ctrl.getItemById(id)));
                 })
         );
     }
 
-    function menu(listery) {
+    function renderMenu(menu) {
         return m("ul.tabs",
-            listery.list
-                .filter(function(item) {
-                    return item.position() !== undefined;
-                })
-                .map(function(item) {
-                    return m("li", renderTab(item));
+            menu.items()
+                .map(function(id) {
+                    return m("li", renderTab(ctrl.getItemById(id)));
                 })
         );
+    }
+
+    function pushItem(list, id) {
+        var items = list.items();
+
+        if(items.length < 1) {
+            list.items([ id ]);
+            return;
+        }
+        items.splice(list.items().length, 0, id);
+        list.items(items);
+    }
+
+    function popItem(list, id) {
+        var items = list.items();
+        items.splice(items.indexOf(id), 1);
+        list.items(items);
+    }
+
+    function updateListAndMenu() {
+        var dragging = ctrl.listery.dragging;
+        if(typeof dragging.listIndex() === "undefined" || typeof dragging.menuIndex() === "undefined") {
+            return;
+        }
+        if(dragging.listIndex() === -1 && dragging.menuIndex() >= 0) {
+            popItem(ctrl.listery.list, dragging.id());
+            pushItem(ctrl.listery.menu, dragging.id());
+            return;
+        }
+        if(dragging.menuIndex() === -1 && dragging.listIndex() >= 0) {
+            popItem(ctrl.listery.menu, dragging.id());
+            pushItem(ctrl.listery.list, dragging.id());
+            return;
+        }
+    }
+
+    function setListRegion() {
+        var list = document.getElementsByClassName("list")[0];
+        ctrl.listery.list.region.x1(list.offsetLeft);
+        ctrl.listery.list.region.y1(list.offsetTop);
+        ctrl.listery.list.region.x2(list.offsetLeft + list.clientWidth);
+        ctrl.listery.list.region.y2(list.offsetTop + list.clientHeight);
+    }
+
+    function setMenuRegion() {
+        var menu = document.getElementsByClassName("menu")[0];
+        ctrl.listery.menu.region.x1(menu.offsetLeft);
+        ctrl.listery.menu.region.y1(menu.offsetTop);
+        ctrl.listery.menu.region.x2(menu.offsetLeft + menu.clientWidth);
+        ctrl.listery.menu.region.y2(menu.offsetTop + menu.clientHeight);
+    }
+
+    function cursorInList(e) {
+        var region = ctrl.listery.list.region;
+        return e.clientX >= region.x1() &&
+               e.clientX <= region.x2() &&
+               e.clientY >= region.y1() &&
+               e.clientY <= region.y2();
+    }
+
+    function cursorInMenu(e) {
+        var region = ctrl.listery.menu.region;
+        return e.clientX >= region.x1() &&
+               e.clientX <= region.x2() &&
+               e.clientY >= region.y1() &&
+               e.clientY <= region.y2();
+    }
+
+
+    function updateDraggingDrop(e) {
+        if(!cursorInMenu(e)) {
+            ctrl.listery.dragging.menuIndex(-1);
+        } else {
+            ctrl.listery.dragging.menuIndex(ctrl.listery.menu.items().length);
+        }
+
+        if(!cursorInList(e)) {
+            ctrl.listery.dragging.listIndex(-1);
+        } else {
+            ctrl.listery.dragging.listIndex(ctrl.listery.list.items().length);
+        }
+
     }
 
     return m(".dragins.pure-g",
         {
             onmousedown : function(e) {
-                var menus = document.getElementsByClassName("menu")[0];
-                ctrl.listery.menus.region.x1(menus.offsetLeft);
-                ctrl.listery.menus.region.y1(menus.offsetTop);
-                ctrl.listery.menus.region.x2(menus.offsetLeft + menus.clientWidth);
-                ctrl.listery.menus.region.y2(menus.offsetTop + menus.clientHeight);
+                setMenuRegion();
+                setListRegion();
             },
             onmouseup : function(e) {
-                // helper
-                function droppedInMenu(e) {
-                    var region = ctrl.listery.menus.region;
-                    return e.clientX >= region.x1() &&
-                           e.clientX <= region.x2() &&
-                           e.clientY >= region.y1() &&
-                           e.clientY <= region.y2();
-                }
+                var dragging = ctrl.listery.dragging;
 
-                // if tab dropped in menu
-                if(ctrl.listery.dragging.id() && droppedInMenu(e)) {
-                    // update position
-                    ctrl.listery.list
-                        .forEach(function(item) {
-                            if(item.id === ctrl.listery.dragging.id()) {
-                                item.position(true);
-                            }
-                        });
-
+                if(dragging.id()) {
+                    updateListAndMenu();
                 }
-                ctrl.listery.dragging.id(undefined);
+                dragging.id(undefined);
             },
             onmousemove : function(e) {
+                // don't do anything if not dragging a tab
                 if(!ctrl.listery.dragging.id()) {
                     m.redraw.strategy("none");
                     return;
                 }
                 ctrl.listery.dragging.position.x(e.clientX);
                 ctrl.listery.dragging.position.y(e.clientY);
+
+                updateDraggingDrop(e);
+
             }
         },
         [
-            m(".list.pure-u-1-4", list(ctrl.listery)),
-            m(".menu.pure-u-3-4", menu(ctrl.listery)),
+            m(".list.pure-u-1-4", renderList(ctrl.listery.list)),
+            m(".menu.pure-u-3-4", renderMenu(ctrl.listery.menu)),
             m(".dragging.pure-u",
                 {
                     class : ctrl.listery.dragging.id() ? "dragging-active" : "",
