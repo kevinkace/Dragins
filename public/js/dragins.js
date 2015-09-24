@@ -2,11 +2,47 @@
 
 "use strict";
 
+var data = [
+    {
+        id    : 123,
+        name  : "red 123",
+        url   : "blah.com/123",
+        desc  : "123 good"
+    },{
+        id    : 456,
+        name  : "blue 456",
+        url   : "blah.com/456",
+        desc  : "456 good"
+    },{
+        id    : 789,
+        name  : "green 789",
+        url   : "blah.com/789",
+        desc  : "789 good"
+    },{
+        id    : 159,
+        name  : "yellow 159",
+        url   : "blah.com/159",
+        desc  : "159 good"
+    },{
+        id    : 753,
+        name  : "orange 753",
+        url   : "blah.com/753",
+        desc  : "753 good"
+    },{
+        id    : 741,
+        name  : "purple 741",
+        url   : "blah.com/741",
+        desc  : "741 good"
+    }
+];
+
 var Dragins = {};
 
 Dragins.Listery = function() {
+
     this.dragging = {
-        name : m.prop(),
+        id : m.prop(),
+        origin : m.prop(),
         position : {
             x : m.prop(),
             y : m.prop()
@@ -20,14 +56,13 @@ Dragins.Listery = function() {
             y : m.prop()
         }
     };
-    this.pages = m.prop([
-        "red",
-        "green",
-        "blue",
-        "orange"
-    ]);
+
+    this.list = data.map(function(data, idx) {
+        data.position = m.prop();
+        return data;
+    });
+
     this.menus = {
-        list     : m.prop([]),
         region : {
             x1 : m.prop(),
             y1 : m.prop(),
@@ -40,17 +75,24 @@ Dragins.Listery = function() {
 
 Dragins.controller = function() {
     this.listery = new Dragins.Listery();
+
+    this.getItemById = function(id) {
+        return this.listery.list
+            .filter(function(item) {
+                return item.id === id;
+            })[0];
+    };
 };
 
 Dragins.view = function(ctrl) {
 
     function renderTab(item) {
+        var self = item;
         return m(".tab.pure-button-active",
             {
                 onmousedown : function(e) {
                     e.preventDefault();
-                    ctrl.listery.dragging.name(e.currentTarget.innerText.trim());
-                    // debugger;
+                    ctrl.listery.dragging.id(self.id);
                     ctrl.listery.dragging.size.x(e.currentTarget.clientWidth);
                     ctrl.listery.dragging.size.y(e.currentTarget.clientHeight);
                     ctrl.listery.dragging.position.x(e.clientX);
@@ -60,25 +102,31 @@ Dragins.view = function(ctrl) {
                 }
             },
             [
-                m("h4", item || "empty")
+                m("h4", item.id || "empty")
             ]
         );
     }
 
     function list(listery) {
         return m("ul.tabs",
-            listery.pages()
-                .map(function(page){
-                    return m("li", renderTab(page));
+            listery.list
+                .filter(function(item) {
+                    return item.position() === undefined;
+                })
+                .map(function(item) {
+                    return m("li", renderTab(item));
                 })
         );
     }
 
     function menu(listery) {
         return m("ul.tabs",
-            listery.menus.list()
-                .map(function(menu) {
-                    return m("li", renderTab(menu));
+            listery.list
+                .filter(function(item) {
+                    return item.position() !== undefined;
+                })
+                .map(function(item) {
+                    return m("li", renderTab(item));
                 })
         );
     }
@@ -93,6 +141,7 @@ Dragins.view = function(ctrl) {
                 ctrl.listery.menus.region.y2(menus.offsetTop + menus.clientHeight);
             },
             onmouseup : function(e) {
+                // helper
                 function droppedInMenu(e) {
                     var region = ctrl.listery.menus.region;
                     return e.clientX >= region.x1() &&
@@ -100,25 +149,22 @@ Dragins.view = function(ctrl) {
                            e.clientY >= region.y1() &&
                            e.clientY <= region.y2();
                 }
-                if(ctrl.listery.dragging.name() && droppedInMenu(e)) {
-                    // Update menu
-                    var list = ctrl.listery.menus.list().slice();
-                    list.push(ctrl.listery.dragging.name());
-                    ctrl.listery.menus.list(list);
 
-                    // Update pages
-                    var pages = ctrl.listery.pages()
-                                    .slice()
-                                    .filter(function(page) {
-                                        return page !== ctrl.listery.dragging.name();
-                                    });
-                    ctrl.listery.pages(pages);
+                // if tab dropped in menu
+                if(ctrl.listery.dragging.id() && droppedInMenu(e)) {
+                    // update position
+                    ctrl.listery.list
+                        .forEach(function(item) {
+                            if(item.id === ctrl.listery.dragging.id()) {
+                                item.position(true);
+                            }
+                        });
 
                 }
-                ctrl.listery.dragging.name(undefined);
+                ctrl.listery.dragging.id(undefined);
             },
             onmousemove : function(e) {
-                if(!ctrl.listery.dragging.name()) {
+                if(!ctrl.listery.dragging.id()) {
                     m.redraw.strategy("none");
                     return;
                 }
@@ -131,7 +177,7 @@ Dragins.view = function(ctrl) {
             m(".menu.pure-u-3-4", menu(ctrl.listery)),
             m(".dragging.pure-u",
                 {
-                    class : ctrl.listery.dragging.name() ? "dragging-active" : "",
+                    class : ctrl.listery.dragging.id() ? "dragging-active" : "",
                     style : {
                         left       : ctrl.listery.dragging.position.x()   + "px" || 0,
                         top        : ctrl.listery.dragging.position.y()   + "px" || 0,
@@ -141,7 +187,7 @@ Dragins.view = function(ctrl) {
                         marginTop  : ctrl.listery.dragging.offset.y()     + "px" || 0
                     }
                 },
-                renderTab(ctrl.listery.dragging.name())
+                ctrl.getItemById(ctrl.listery.dragging.id()) ? renderTab(ctrl.getItemById(ctrl.listery.dragging.id())) : ""
             )
         ]
     );
