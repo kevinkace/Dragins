@@ -90,8 +90,7 @@ Dragins.Listery = function() {
         offset : {
             x : m.prop(),
             y : m.prop()
-        },
-        below : m.prop()
+        }
     };
 
     this.dropzone = {
@@ -134,7 +133,9 @@ Dragins.view = function(ctrl) {
                     id : item.id
                 },
                 [
-                    m("h4", item.name || "empty")
+                    m("h4", item.name || "empty"),
+                    item.id === ctrl.listery.dragging.id() ? m("p", "x: " + ctrl.listery.dragging.position.x() + ", y: " + ctrl.listery.dragging.position.y()) : "",
+                    item.id === ctrl.listery.dragging.id() ? m("p", "li: " + ctrl.listery.dragging.listIndex() + ", mi: " + ctrl.listery.dragging.menuIndex()) : ""
                 ]
             );
     }
@@ -149,17 +150,16 @@ Dragins.view = function(ctrl) {
     }
 
     function renderMenu(menu) {
-        debugger;
         return m("ul.tabs",
             {
-                class : ctrl.listery.dragging.id() && typeof ctrl.listery.dragging.below() === "undefined" ? "below" : ""
+                class : ctrl.listery.dragging.id() ? "below" : ""
             },
             menu.items()
                 .map(function(id) {
                     return m("li",
-                        // {
-                        //     class : ctrl.listery.dragging.id() && ctrl.listery.dragging.below() === id ? "below" : ""
-                        // },
+                        {
+                            class : ctrl.listery.dragging.id() ? "below" : ""
+                        },
                         renderTab(ctrl.getItemById(id))
                     );
                 })
@@ -188,6 +188,7 @@ Dragins.view = function(ctrl) {
 
     function updateListAndMenu() {
         var dragging = ctrl.listery.dragging;
+        debugger;
         if(typeof dragging.listIndex() === "undefined" || typeof dragging.menuIndex() === "undefined") {
             return;
         }
@@ -221,8 +222,8 @@ Dragins.view = function(ctrl) {
         ctrl.listery.menu.region.y2(menu.offsetTop + menu.clientHeight);
     }
 
-    function setMenuItemsRegion() {
-        ctrl.listery.menu.items()
+    function setItemsRegion(list) {
+        list.items()
             .forEach(function(id) {
                 var item = ctrl.getItemById(id),
                     tab  = document.getElementById(id);
@@ -233,45 +234,123 @@ Dragins.view = function(ctrl) {
             });
     }
 
-    function cursorInList(e) {
-        var region = ctrl.listery.list.region;
-        return e.clientX >= region.x1() &&
-               e.clientX <= region.x2() &&
-               e.clientY >= region.y1() &&
-               e.clientY <= region.y2();
+    function draggingInList(e) {
+        var region   = ctrl.listery.list.region,
+            dragging = ctrl.listery.dragging;
+        return dragging.position.x() >= region.x1() &&
+               dragging.position.x() <= region.x2() &&
+               dragging.position.y() >= region.y1() &&
+               dragging.position.y() <= region.y2();
     }
 
-    function cursorInMenu(e) {
-        var region = ctrl.listery.menu.region;
-        return e.clientX >= region.x1() &&
-               e.clientX <= region.x2() &&
-               e.clientY >= region.y1() &&
-               e.clientY <= region.y2();
+    function draggingInMenu(e) {
+        var region   = ctrl.listery.menu.region,
+            dragging = ctrl.listery.dragging;
+        return dragging.position.x() >= region.x1() &&
+               dragging.position.y() <= region.x2() &&
+               dragging.position.y() >= region.y1() &&
+               dragging.position.y() <= region.y2();
     }
 
-    function updateDraggingDrop(e) {
-        if(!cursorInMenu(e)) {
-            ctrl.listery.dragging.menuIndex(-1);
-        } else {
-            ctrl.listery.dragging.below(ctrl.listery.menu.items().reduce(function(id) {
+    function draggingBelowItem(id) {
+        // debugger;
+        var dragging = ctrl.listery.dragging;
+            item     = ctrl.getItemById(id);
 
-                })
-            );
-            ctrl.listery.dragging.menuIndex(ctrl.listery.menu.items().length);
+        return dragging.position.y > item.region.y2();
+    }
+
+    // function updateDraggingDrop(e) {
+    //     if(!cursorInMenu(e)) {
+    //         ctrl.listery.dragging.menuIndex(-1);
+    //     } else {
+    //         var belowId;
+
+    //         ctrl.listery.menu.items().forEach(function(id) {
+    //             // debugger;
+    //             if(cursorBelowItem(e, id)) {
+    //                 belowId = id;
+    //             }
+    //         });
+    //         ctrl.listery.dragging.below(belowId);
+    //         // ctrl.listery.dragging.menuIndex(ctrl.listery.menu.items().length);
+    //     }
+
+    //     if(!cursorInList(e)) {
+    //         ctrl.listery.dragging.listIndex(-1);
+    //     } else {
+    //         ctrl.listery.dragging.listIndex(ctrl.listery.list.items().length);
+    //     }
+
+    // }
+
+    function getBelow() {
+        var lowestId,
+            dragging = ctrl.listery.dragging,
+            menu     = ctrl.listery.menu;
+
+        menu.items().forEach(function(id) {
+            if(draggingBelowItem(id)) {
+                lowestId = id;
+            }
+        });
+
+        return lowestId;
+    }
+
+    function getMenuIndex() {
+        var dragging = ctrl.listery.dragging,
+            menu     = ctrl.listery.menu,
+            index    = undefined;
+
+        if(!draggingInMenu()) {
+            return -1;
         }
 
-        if(!cursorInList(e)) {
-            ctrl.listery.dragging.listIndex(-1);
-        } else {
-            ctrl.listery.dragging.listIndex(ctrl.listery.list.items().length);
+        index = 0;
+
+        debugger;
+        menu.items().forEach(function(id) {
+            index = dragging.position.y() > ctrl.getItemById(id).region.y2() ?
+                menu.items().indexOf(id) :
+                index;
+        });
+        return index;
+    }
+
+    function getListIndex() {
+        var dragging = ctrl.listery.dragging,
+            list     = ctrl.listery.list,
+            index    = undefined;
+
+        if(!draggingInList()) {
+            return -1;
         }
 
+        index = 0;
+
+        list.items().forEach(function(id) {
+            index = dragging.position.y() > ctrl.getItemById(id).region.y2() ?
+                list.items().indexOf(id) :
+                index;
+        });
+        return index;
+    }
+
+    function updateDragging(e) {
+        var dragging = ctrl.listery.dragging;
+
+        dragging.position.x(e.clientX);
+        dragging.position.y(e.clientY);
+        dragging.menuIndex(getMenuIndex());
+        dragging.listIndex(getListIndex());
     }
 
     return m(".dragins.pure-g",
         {
             onmousedown : function(e) {
-                setMenuItemsRegion();
+                setItemsRegion(ctrl.listery.list);
+                setItemsRegion(ctrl.listery.menu);
                 setMenuRegion();
                 setListRegion();
             },
@@ -287,16 +366,15 @@ Dragins.view = function(ctrl) {
                     m.redraw.strategy("none");
                     return;
                 }
-                ctrl.listery.dragging.position.x(e.clientX);
-                ctrl.listery.dragging.position.y(e.clientY);
+                updateDragging(e);
 
-                updateDraggingDrop(e);
+                // updateDraggingDrop(e);
 
             }
         },
         [
-            m(".list.pure-u-1-4", renderList(ctrl.listery.list)),
-            m(".menu.pure-u-3-4", renderMenu(ctrl.listery.menu)),
+            m(".list.pure-u-1-2", renderList(ctrl.listery.list)),
+            m(".menu.pure-u-1-2", renderMenu(ctrl.listery.menu)),
             m(".dragging.pure-u",
                 {
                     class : ctrl.listery.dragging.id() ? "dragging-active" : "",
