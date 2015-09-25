@@ -40,11 +40,17 @@ var Dragins = {};
 
 Dragins.Listery = function() {
 
-    this.data = data;
-        //.map(function(data, idx) {
-        //     data.position = m.prop();
-        //     return data;
-        // });
+    this.data = data
+        .map(function(data, idx) {
+            data.region = {
+                x1 : m.prop(),
+                y1 : m.prop(),
+                x2 : m.prop(),
+                y2 : m.prop()
+            };
+            data.m = m.prop()
+            return data;
+        });
 
     this.list = {
         items : m.prop(data.map(function(item) {
@@ -84,7 +90,8 @@ Dragins.Listery = function() {
         offset : {
             x : m.prop(),
             y : m.prop()
-        }
+        },
+        below : m.prop()
     };
 
     this.dropzone = {
@@ -112,40 +119,49 @@ Dragins.controller = function() {
 Dragins.view = function(ctrl) {
 
     function renderTab(item) {
-        var self = item;
         return m(".tab.pure-button-active",
-            {
-                onmousedown : function(e) {
-                    e.preventDefault();
-                    ctrl.listery.dragging.id(self.id);
-                    ctrl.listery.dragging.size.x(e.currentTarget.clientWidth);
-                    ctrl.listery.dragging.size.y(e.currentTarget.clientHeight);
-                    ctrl.listery.dragging.position.x(e.clientX);
-                    ctrl.listery.dragging.position.y(e.clientY);
-                    ctrl.listery.dragging.offset.x(e.currentTarget.offsetLeft - e.clientX);
-                    ctrl.listery.dragging.offset.y(e.currentTarget.offsetTop - e.clientY);
-                }
-            },
-            [
-                m("h4", item.name || "empty")
-            ]
-        );
+                {
+                    onmousedown : function(e) {
+                        e.preventDefault();
+                        ctrl.listery.dragging.id(item.id);
+                        ctrl.listery.dragging.size.x(e.currentTarget.clientWidth);
+                        ctrl.listery.dragging.size.y(e.currentTarget.clientHeight);
+                        ctrl.listery.dragging.position.x(e.clientX);
+                        ctrl.listery.dragging.position.y(e.clientY);
+                        ctrl.listery.dragging.offset.x(e.currentTarget.offsetLeft - e.clientX);
+                        ctrl.listery.dragging.offset.y(e.currentTarget.offsetTop - e.clientY);
+                    },
+                    id : item.id
+                },
+                [
+                    m("h4", item.name || "empty")
+                ]
+            );
     }
 
     function renderList(list) {
         return m("ul.tabs",
             list.items()
                 .map(function(id) {
-                    return m("li", renderTab(ctrl.getItemById(id)));
+                    return m("li", renderTab(ctrl.getItemById(id)) );
                 })
         );
     }
 
     function renderMenu(menu) {
+        debugger;
         return m("ul.tabs",
+            {
+                class : ctrl.listery.dragging.id() && typeof ctrl.listery.dragging.below() === "undefined" ? "below" : ""
+            },
             menu.items()
                 .map(function(id) {
-                    return m("li", renderTab(ctrl.getItemById(id)));
+                    return m("li",
+                        // {
+                        //     class : ctrl.listery.dragging.id() && ctrl.listery.dragging.below() === id ? "below" : ""
+                        // },
+                        renderTab(ctrl.getItemById(id))
+                    );
                 })
         );
     }
@@ -205,6 +221,18 @@ Dragins.view = function(ctrl) {
         ctrl.listery.menu.region.y2(menu.offsetTop + menu.clientHeight);
     }
 
+    function setMenuItemsRegion() {
+        ctrl.listery.menu.items()
+            .forEach(function(id) {
+                var item = ctrl.getItemById(id),
+                    tab  = document.getElementById(id);
+                item.region.x1(tab.offsetLeft);
+                item.region.y1(tab.offsetTop);
+                item.region.x2(tab.offsetLeft + tab.clientWidth);
+                item.region.y2(tab.offsetTop + tab.clientHeight);
+            });
+    }
+
     function cursorInList(e) {
         var region = ctrl.listery.list.region;
         return e.clientX >= region.x1() &&
@@ -221,11 +249,14 @@ Dragins.view = function(ctrl) {
                e.clientY <= region.y2();
     }
 
-
     function updateDraggingDrop(e) {
         if(!cursorInMenu(e)) {
             ctrl.listery.dragging.menuIndex(-1);
         } else {
+            ctrl.listery.dragging.below(ctrl.listery.menu.items().reduce(function(id) {
+
+                })
+            );
             ctrl.listery.dragging.menuIndex(ctrl.listery.menu.items().length);
         }
 
@@ -240,6 +271,7 @@ Dragins.view = function(ctrl) {
     return m(".dragins.pure-g",
         {
             onmousedown : function(e) {
+                setMenuItemsRegion();
                 setMenuRegion();
                 setListRegion();
             },
@@ -269,12 +301,12 @@ Dragins.view = function(ctrl) {
                 {
                     class : ctrl.listery.dragging.id() ? "dragging-active" : "",
                     style : {
-                        left       : ctrl.listery.dragging.position.x()   + "px" || 0,
-                        top        : ctrl.listery.dragging.position.y()   + "px" || 0,
-                        width      : ctrl.listery.dragging.size.x()       + "px" || 0,
-                        height     : ctrl.listery.dragging.size.y()       + "px" || 0,
-                        marginLeft : ctrl.listery.dragging.offset.x()     + "px" || 0,
-                        marginTop  : ctrl.listery.dragging.offset.y()     + "px" || 0
+                        left       : ctrl.listery.dragging.position.x() + "px" || 0,
+                        top        : ctrl.listery.dragging.position.y() + "px" || 0,
+                        width      : ctrl.listery.dragging.size.x()     + "px" || 0,
+                        height     : ctrl.listery.dragging.size.y()     + "px" || 0,
+                        marginLeft : ctrl.listery.dragging.offset.x()   + "px" || 0,
+                        marginTop  : ctrl.listery.dragging.offset.y()   + "px" || 0
                     }
                 },
                 ctrl.getItemById(ctrl.listery.dragging.id()) ? renderTab(ctrl.getItemById(ctrl.listery.dragging.id())) : ""
