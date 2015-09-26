@@ -166,19 +166,20 @@ Dragins.view = function(ctrl) {
         );
     }
 
-    function pushItem(list, id) {
+    function pushItem(list, id, idx) {
         var items = list.items();
 
         if(items.length < 1) {
             list.items([ id ]);
             return;
         }
-        items.splice(list.items().length, 0, id);
+        items.splice(idx, 0, id);
         list.items(items);
     }
 
     function popItem(list, id) {
         var items = list.items();
+
         if(items.indexOf(id) < 0) {
             return;
         }
@@ -188,20 +189,20 @@ Dragins.view = function(ctrl) {
 
     function updateListAndMenu() {
         var dragging = ctrl.listery.dragging;
-        debugger;
+
         if(typeof dragging.listIndex() === "undefined" || typeof dragging.menuIndex() === "undefined") {
             return;
         }
         if(dragging.listIndex() === -1 && dragging.menuIndex() >= 0) {
             popItem(ctrl.listery.list, dragging.id());
             popItem(ctrl.listery.menu, dragging.id());
-            pushItem(ctrl.listery.menu, dragging.id());
+            pushItem(ctrl.listery.menu, dragging.id(), dragging.menuIndex());
             return;
         }
         if(dragging.menuIndex() === -1 && dragging.listIndex() >= 0) {
             popItem(ctrl.listery.menu, dragging.id());
             popItem(ctrl.listery.list, dragging.id());
-            pushItem(ctrl.listery.list, dragging.id());
+            pushItem(ctrl.listery.list, dragging.id(), dragging.listIndex());
             return;
         }
     }
@@ -309,10 +310,9 @@ Dragins.view = function(ctrl) {
 
         index = 0;
 
-        debugger;
         menu.items().forEach(function(id) {
             index = dragging.position.y() > ctrl.getItemById(id).region.y2() ?
-                menu.items().indexOf(id) :
+                menu.items().indexOf(id) + 1 :
                 index;
         });
         return index;
@@ -331,7 +331,7 @@ Dragins.view = function(ctrl) {
 
         list.items().forEach(function(id) {
             index = dragging.position.y() > ctrl.getItemById(id).region.y2() ?
-                list.items().indexOf(id) :
+                list.items().indexOf(id) + 1 :
                 index;
         });
         return index;
