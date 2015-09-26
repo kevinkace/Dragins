@@ -155,10 +155,10 @@ Dragins.view = function(ctrl) {
                 class : ctrl.listery.dragging.id() ? "below" : ""
             },
             menu.items()
-                .map(function(id) {
+                .map(function(id, idx) {
                     return m("li",
                         {
-                            class : ctrl.listery.dragging.id() ? "below" : ""
+                            class : ctrl.listery.dragging.menuIndex() > idx ? "below" : ""
                         },
                         renderTab(ctrl.getItemById(id))
                     );
@@ -346,6 +346,12 @@ Dragins.view = function(ctrl) {
         dragging.listIndex(getListIndex());
     }
 
+    function clearDragging() {
+        ctrl.listery.dragging.id(undefined);
+        ctrl.listery.dragging.menuIndex(undefined);
+        ctrl.listery.dragging.listIndex(undefined);
+    }
+
     return m(".dragins.pure-g",
         {
             onmousedown : function(e) {
@@ -358,7 +364,7 @@ Dragins.view = function(ctrl) {
                 if(ctrl.listery.dragging.id()) {
                     updateListAndMenu();
                 }
-                ctrl.listery.dragging.id(undefined);
+                clearDragging();
             },
             onmousemove : function(e) {
                 // don't do anything if not dragging a tab

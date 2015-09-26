@@ -34,12 +34,24 @@ p {
     height: 100%;
 }
 
-.below:after {
+.menu.below:after {
     content: "";
     position: absolute;
     top: 1em;
     width: 100%;
     height: 3px;
+    background: red;
+}
+
+li {
+    position: relative;
+}
+li.below:after {
+    content: "";
+    position: absolute;
+    bottom: 6px;
+    height: 3px;
+    width: 100%;
     background: red;
 }
 
