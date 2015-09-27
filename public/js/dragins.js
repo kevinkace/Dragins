@@ -41,14 +41,14 @@ var Dragins = {};
 Dragins.Listery = function() {
 
     this.data = data
-        .map(function(data, idx) {
+        .map(function(data) {
             data.region = {
                 x1 : m.prop(),
                 y1 : m.prop(),
                 x2 : m.prop(),
                 y2 : m.prop()
             };
-            data.m = m.prop()
+            data.m = m.prop();
             return data;
         });
 
@@ -150,9 +150,10 @@ Dragins.view = function(ctrl) {
     }
 
     function renderMenu(menu) {
+        var dragging = ctrl.listery.dragging;
         return m("ul.tabs",
             {
-                class : ctrl.listery.dragging.id() ? "below" : ""
+                class : dragging.id() && typeof dragging.menuIndex() !== "undefined" && dragging.menuIndex() < 0 ? "below" : ""
             },
             menu.items()
                 .map(function(id, idx) {
@@ -253,56 +254,10 @@ Dragins.view = function(ctrl) {
                dragging.position.y() <= region.y2();
     }
 
-    function draggingBelowItem(id) {
-        // debugger;
-        var dragging = ctrl.listery.dragging;
-            item     = ctrl.getItemById(id);
-
-        return dragging.position.y > item.region.y2();
-    }
-
-    // function updateDraggingDrop(e) {
-    //     if(!cursorInMenu(e)) {
-    //         ctrl.listery.dragging.menuIndex(-1);
-    //     } else {
-    //         var belowId;
-
-    //         ctrl.listery.menu.items().forEach(function(id) {
-    //             // debugger;
-    //             if(cursorBelowItem(e, id)) {
-    //                 belowId = id;
-    //             }
-    //         });
-    //         ctrl.listery.dragging.below(belowId);
-    //         // ctrl.listery.dragging.menuIndex(ctrl.listery.menu.items().length);
-    //     }
-
-    //     if(!cursorInList(e)) {
-    //         ctrl.listery.dragging.listIndex(-1);
-    //     } else {
-    //         ctrl.listery.dragging.listIndex(ctrl.listery.list.items().length);
-    //     }
-
-    // }
-
-    function getBelow() {
-        var lowestId,
-            dragging = ctrl.listery.dragging,
-            menu     = ctrl.listery.menu;
-
-        menu.items().forEach(function(id) {
-            if(draggingBelowItem(id)) {
-                lowestId = id;
-            }
-        });
-
-        return lowestId;
-    }
-
     function getMenuIndex() {
         var dragging = ctrl.listery.dragging,
             menu     = ctrl.listery.menu,
-            index    = undefined;
+            index;
 
         if(!draggingInMenu()) {
             return -1;
@@ -321,7 +276,7 @@ Dragins.view = function(ctrl) {
     function getListIndex() {
         var dragging = ctrl.listery.dragging,
             list     = ctrl.listery.list,
-            index    = undefined;
+            index;
 
         if(!draggingInList()) {
             return -1;
