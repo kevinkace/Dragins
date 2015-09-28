@@ -118,6 +118,7 @@ Dragins.controller = function() {
 Dragins.view = function(ctrl) {
 
     function renderTab(item) {
+        var isDragging = item.id === ctrl.listery.dragging.id();
         return m(".tab.pure-button-active",
                 {
                     onmousedown : function(e) {
@@ -134,8 +135,9 @@ Dragins.view = function(ctrl) {
                 },
                 [
                     m("h4", item.name || "empty"),
-                    item.id === ctrl.listery.dragging.id() ? m("p", "x: " + ctrl.listery.dragging.position.x() + ", y: " + ctrl.listery.dragging.position.y()) : "",
-                    item.id === ctrl.listery.dragging.id() ? m("p", "li: " + ctrl.listery.dragging.listIndex() + ", mi: " + ctrl.listery.dragging.menuIndex()) : ""
+                    isDragging ? m("p", "x: " + ctrl.listery.dragging.position.x() + ", y: " + ctrl.listery.dragging.position.y()) : "",
+                    isDragging ? m("p", "li: " + ctrl.listery.dragging.listIndex() + ", mi: " + ctrl.listery.dragging.menuIndex()) : "",
+                    isDragging ? m("div.drop", { style : { top : ctrl.listery.dragging.menuIndex() * 40 + "px"} }) : ""
                 ]
             );
     }
@@ -152,15 +154,16 @@ Dragins.view = function(ctrl) {
     function renderMenu(menu) {
         var dragging = ctrl.listery.dragging;
         return m("ul.tabs",
-            {
-                class : dragging.id() && typeof dragging.menuIndex() !== "undefined" && dragging.menuIndex() < 0 ? "below" : ""
-            },
+            // {
+            //     class : dragging.id() && typeof dragging.menuIndex() !== "undefined" && dragging.menuIndex() < 0 ? "below" : ""
+            // },
             menu.items()
                 .map(function(id, idx) {
+                    debugger;
                     return m("li",
-                        {
-                            class : ctrl.listery.dragging.menuIndex() > idx ? "below" : ""
-                        },
+                        // {
+                        //     class : ctrl.listery.dragging.menuIndex() > idx ? "below" : ""
+                        // },
                         renderTab(ctrl.getItemById(id))
                     );
                 })

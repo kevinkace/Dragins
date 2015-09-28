@@ -33,7 +33,7 @@ p {
     padding: 1em 0.5em;
     height: 100%;
 }
-
+/*
 .menu.below:after {
     content: "";
     position: absolute;
@@ -41,7 +41,15 @@ p {
     width: 100%;
     height: 3px;
     background: red;
-}
+}*/
+
+/*.drop {
+    position: absolute;
+    margin-top: 60px;
+    background: red;
+    height: 3px;
+    width: 100%;
+}*/
 
 /*li {
     position: relative;
