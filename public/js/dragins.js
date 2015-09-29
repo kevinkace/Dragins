@@ -107,12 +107,74 @@ Dragins.Listery = function() {
 Dragins.controller = function() {
     this.listery = new Dragins.Listery();
 
-    this.getItemById = function(id) {
+    this.getItem = function(id) {
         return this.listery.data
             .filter(function(item) {
                 return item.id === id;
             })[0];
     };
+
+    this.pushItem = function(list, id, idx) {
+        var items = list.items();
+
+        if(items.length < 1) {
+            list.items([ id ]);
+            return;
+        }
+        items.splice(idx, 0, id);
+        list.items(items);
+    };
+
+    this.popItem = function(list, id) {
+        var items = list.items();
+
+        if(items.indexOf(id) < 0) {
+            return;
+        }
+        items.splice(items.indexOf(id), 1);
+        list.items(items);
+    };
+
+    this.getMenuIndex = function() {
+        var dragging = this.listery.dragging,
+            menu     = this.listery.menu,
+            index;
+
+        // todo: fix this
+        if(!draggingInMenu()) {
+            return -1;
+        }
+
+        index = 0;
+
+        menu.items().forEach(function(id) {
+            index = dragging.position.y() > this.getItem(id).region.y2() ?
+                menu.items().indexOf(id) + 1 :
+                index;
+        });
+        return index;
+    };
+
+    this.getListIndex = function() {
+        var dragging = this.listery.dragging,
+            list     = this.listery.list,
+            index;
+
+        // todo: fix this
+        if(!draggingInList()) {
+            return -1;
+        }
+
+        index = 0;
+
+        list.items().forEach(function(id) {
+            index = dragging.position.y() > this.getItem(id).region.y2() ?
+                list.items().indexOf(id) + 1 :
+                index;
+        });
+        return index;
+    };
+
 };
 
 Dragins.view = function(ctrl) {
@@ -146,7 +208,7 @@ Dragins.view = function(ctrl) {
         return m("ul.tabs",
             list.items()
                 .map(function(id) {
-                    return m("li", renderTab(ctrl.getItemById(id)) );
+                    return m("li", renderTab(ctrl.getItem(id)) );
                 })
         );
     }
@@ -164,31 +226,10 @@ Dragins.view = function(ctrl) {
                         // {
                         //     class : ctrl.listery.dragging.menuIndex() > idx ? "below" : ""
                         // },
-                        renderTab(ctrl.getItemById(id))
+                        renderTab(ctrl.getItem(id))
                     );
                 })
         );
-    }
-
-    function pushItem(list, id, idx) {
-        var items = list.items();
-
-        if(items.length < 1) {
-            list.items([ id ]);
-            return;
-        }
-        items.splice(idx, 0, id);
-        list.items(items);
-    }
-
-    function popItem(list, id) {
-        var items = list.items();
-
-        if(items.indexOf(id) < 0) {
-            return;
-        }
-        items.splice(items.indexOf(id), 1);
-        list.items(items);
     }
 
     function updateListAndMenu() {
@@ -198,15 +239,15 @@ Dragins.view = function(ctrl) {
             return;
         }
         if(dragging.listIndex() === -1 && dragging.menuIndex() >= 0) {
-            popItem(ctrl.listery.list, dragging.id());
-            popItem(ctrl.listery.menu, dragging.id());
-            pushItem(ctrl.listery.menu, dragging.id(), dragging.menuIndex());
+            ctrl.popItem(ctrl.listery.list, dragging.id());
+            ctrl.popItem(ctrl.listery.menu, dragging.id());
+            ctrl.pushItem(ctrl.listery.menu, dragging.id(), dragging.menuIndex());
             return;
         }
         if(dragging.menuIndex() === -1 && dragging.listIndex() >= 0) {
-            popItem(ctrl.listery.menu, dragging.id());
-            popItem(ctrl.listery.list, dragging.id());
-            pushItem(ctrl.listery.list, dragging.id(), dragging.listIndex());
+            ctrl.popItem(ctrl.listery.menu, dragging.id());
+            ctrl.popItem(ctrl.listery.list, dragging.id());
+            ctrl.pushItem(ctrl.listery.list, dragging.id(), dragging.listIndex());
             return;
         }
     }
@@ -230,7 +271,7 @@ Dragins.view = function(ctrl) {
     function setItemsRegion(list) {
         list.items()
             .forEach(function(id) {
-                var item = ctrl.getItemById(id),
+                var item = ctrl.getItem(id),
                     tab  = document.getElementById(id);
                 item.region.x1(tab.offsetLeft);
                 item.region.y1(tab.offsetTop);
@@ -239,6 +280,7 @@ Dragins.view = function(ctrl) {
             });
     }
 
+    // todo: fix this
     function draggingInList(e) {
         var region   = ctrl.listery.list.region,
             dragging = ctrl.listery.dragging;
@@ -248,6 +290,7 @@ Dragins.view = function(ctrl) {
                dragging.position.y() <= region.y2();
     }
 
+    // todo: fix this
     function draggingInMenu(e) {
         var region   = ctrl.listery.menu.region,
             dragging = ctrl.listery.dragging;
@@ -257,51 +300,13 @@ Dragins.view = function(ctrl) {
                dragging.position.y() <= region.y2();
     }
 
-    function getMenuIndex() {
-        var dragging = ctrl.listery.dragging,
-            menu     = ctrl.listery.menu,
-            index;
-
-        if(!draggingInMenu()) {
-            return -1;
-        }
-
-        index = 0;
-
-        menu.items().forEach(function(id) {
-            index = dragging.position.y() > ctrl.getItemById(id).region.y2() ?
-                menu.items().indexOf(id) + 1 :
-                index;
-        });
-        return index;
-    }
-
-    function getListIndex() {
-        var dragging = ctrl.listery.dragging,
-            list     = ctrl.listery.list,
-            index;
-
-        if(!draggingInList()) {
-            return -1;
-        }
-
-        index = 0;
-
-        list.items().forEach(function(id) {
-            index = dragging.position.y() > ctrl.getItemById(id).region.y2() ?
-                list.items().indexOf(id) + 1 :
-                index;
-        });
-        return index;
-    }
-
     function updateDragging(e) {
         var dragging = ctrl.listery.dragging;
 
         dragging.position.x(e.clientX);
         dragging.position.y(e.clientY);
-        dragging.menuIndex(getMenuIndex());
-        dragging.listIndex(getListIndex());
+        dragging.menuIndex(ctrl.getMenuIndex());
+        dragging.listIndex(ctrl.getListIndex());
     }
 
     function clearDragging() {
@@ -351,7 +356,7 @@ Dragins.view = function(ctrl) {
                         marginTop  : ctrl.listery.dragging.offset.y()   + "px" || 0
                     }
                 },
-                ctrl.getItemById(ctrl.listery.dragging.id()) ? renderTab(ctrl.getItemById(ctrl.listery.dragging.id())) : ""
+                ctrl.getItem(ctrl.listery.dragging.id()) ? renderTab(ctrl.getItem(ctrl.listery.dragging.id())) : ""
             )
         ]
     );
